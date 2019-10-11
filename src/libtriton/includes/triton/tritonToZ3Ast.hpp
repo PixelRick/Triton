@@ -46,7 +46,7 @@ namespace triton {
         std::string getStringValue(const z3::expr& expr);
 
         //! The convert internal process
-        z3::expr do_convert(const triton::ast::SharedAbstractNode& node, std::unordered_map<triton::ast::SharedAbstractNode, z3::expr>* output);
+        z3::expr do_convert(const triton::ast::SharedAbstractNode& node, bool unroll, std::unordered_map<triton::ast::SharedAbstractNode, z3::expr>* output);
 
       protected:
         //! The z3's context.
@@ -59,11 +59,14 @@ namespace triton {
         //! The set of symbolic variables contained in the expression.
         std::unordered_map<std::string, triton::engines::symbolic::SharedSymbolicVariable> variables;
 
+        //! The set of references contained in the expression.
+        std::unordered_map<std::string, triton::ast::SharedAbstractNode> references;
+
         //! Constructor.
         TRITON_EXPORT TritonToZ3Ast(bool eval=true);
 
         //! Converts to Z3's AST
-        TRITON_EXPORT z3::expr convert(const triton::ast::SharedAbstractNode& node);
+        TRITON_EXPORT z3::expr convert(const triton::ast::SharedAbstractNode& node, bool unroll=true);
     };
 
   /*! @} End of ast namespace */

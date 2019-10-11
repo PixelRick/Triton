@@ -42,21 +42,21 @@ namespace triton {
     }
 
 
-    z3::expr TritonToZ3Ast::convert(const triton::ast::SharedAbstractNode& node) {
+    z3::expr TritonToZ3Ast::convert(const triton::ast::SharedAbstractNode& node, bool unroll) {
       std::unordered_map<triton::ast::SharedAbstractNode, z3::expr> results;
       std::deque<triton::ast::SharedAbstractNode> nodes;
 
-      triton::ast::nodesExtraction(&nodes, node, true /* unroll*/, true /* revert */);
+      triton::ast::nodesExtraction(&nodes, node, unroll /* unroll*/, true /* revert */);
 
       for (auto&& n : nodes) {
-        results.insert(std::make_pair(n, this->do_convert(n, &results)));
+        results.insert(std::make_pair(n, this->do_convert(n, unroll, &results)));
       }
 
       return results.at(node);
     }
 
 
-    z3::expr TritonToZ3Ast::do_convert(const triton::ast::SharedAbstractNode& node, std::unordered_map<triton::ast::SharedAbstractNode, z3::expr>* results) {
+    z3::expr TritonToZ3Ast::do_convert(const triton::ast::SharedAbstractNode& node, bool unroll, std::unordered_map<triton::ast::SharedAbstractNode, z3::expr>* results) {
       if (node == nullptr)
         throw triton::exceptions::AstTranslations("TritonToZ3Ast::do_convert(): node cannot be null.");
 
@@ -290,7 +290,28 @@ namespace triton {
         }
 
         case REFERENCE_NODE:
-          return results->at(reinterpret_cast<triton::ast::ReferenceNode*>(node.get())->getSymbolicExpression()->getAst());
+        {
+          auto& se = reinterpret_cast<triton::ast::ReferenceNode*>(node.get())->getSymbolicExpression();
+          auto& ast = se->getAst();
+
+          if (unroll)
+            return results->at(ast);
+
+          /* Record reference */
+          std::stringstream ss;
+          ss << "ref_" << se->getId();
+          this->references[ss.str().c_str()] = node;
+
+          /* If the conversion is used to evaluate a node, we concretize references */
+          if (this->isEval) {
+            triton::uint512 value = ast->evaluate();
+            std::string strValue(value.convert_to<std::string>());
+            return this->context.bv_val(strValue.c_str(), ast->getBitvectorSize());
+          }
+
+          /* Otherwise, we keep the reference for a real conversion */
+          return this->context.bv_const(ss.str().c_str(), ast->getBitvectorSize());
+        }
 
         case STRING_NODE: {
           std::string value = reinterpret_cast<triton::ast::StringNode*>(node.get())->getString();
