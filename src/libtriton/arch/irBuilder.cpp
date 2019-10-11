@@ -65,7 +65,7 @@ namespace triton {
       /* Initialize the target address of memory operands */
       for (auto& operand : inst.operands) {
         if (operand.getType() == triton::arch::OP_MEM) {
-          this->symbolicEngine->initLeaAst(operand.getMemory());
+          this->symbolicEngine->initLeaAst(operand.getMemory(), triton::arch::FORCE_MEMORY_INITIALIZATION);
         }
       }
 
