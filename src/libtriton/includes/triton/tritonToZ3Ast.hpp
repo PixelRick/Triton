@@ -48,7 +48,7 @@ namespace triton {
         //! The convert internal process
         z3::expr do_convert(const triton::ast::SharedAbstractNode& node, bool unroll, std::unordered_map<triton::ast::SharedAbstractNode, z3::expr>* output);
 
-      protected:
+      public:
         //! The z3's context.
         z3::context context;
 

@@ -172,7 +172,9 @@ namespace triton {
           z3::expr expr = z3Ast.convert(node);
 
           /* Simplify and back to Triton's AST */
-          auto snode = tritonAst.convert(expr.simplify());
+          z3::params p(z3Ast.context);
+          p.set("bv_not_simpl", true);
+          auto snode = tritonAst.convert(expr.simplify(p));
 
           return snode;
         }
