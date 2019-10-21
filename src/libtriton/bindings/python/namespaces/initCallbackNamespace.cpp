@@ -47,10 +47,15 @@ each time that the Triton library will need to STORE a concrete memory value. Th
 The callback takes as arguments a \ref py_TritonContext_page, \ref py_Register_page and an integer. Callbacks will be called each time that the
 Triton library will need to PUT a concrete register value. The callback must return nothing.
 
-- **CALLBACK.SYMBOLIC_SIMPLIFICATION**<br>
-Defines a callback which will be called before all symbolic assignments. The callback takes as arguments
-a \ref py_TritonContext_page and an \ref py_AstNode_page. This callback must return a valid \ref py_AstNode_page. The returned node is
-used as assignment. See also the page about \ref SMT_simplification_page.
+- **CALLBACK.SYMBOLIC_NODE_SIMPLIFICATION**<br>
+Defines a callback that is called before all symbolic assignments on the assigned nodes.
+The callback takes as arguments a \ref py_TritonContext_page and an \ref py_AstNode_page. This callback must return a valid \ref py_AstNode_page.
+The returned node is used as assignment. See also the page about \ref SMT_simplification_page.
+
+- **CALLBACK.SYMBOLIC_TREE_SIMPLIFICATION**<br>
+Defines a callback that is called before all symbolic assignments on all the nodes of the assigned nodes' trees in a postorder fashion.
+The callback takes as arguments a \ref py_TritonContext_page and an \ref py_AstNode_page. This callback must return a valid \ref py_AstNode_page.
+The returned node is replaced in the tree that is being simplified. See also the page about \ref SMT_simplification_page.
 
 */
 
@@ -61,11 +66,14 @@ namespace triton {
     namespace python {
 
       void initCallbackNamespace(PyObject* callbackDict) {
-        xPyDict_SetItemString(callbackDict, "GET_CONCRETE_MEMORY_VALUE",   PyLong_FromUint32(triton::callbacks::GET_CONCRETE_MEMORY_VALUE));
-        xPyDict_SetItemString(callbackDict, "GET_CONCRETE_REGISTER_VALUE", PyLong_FromUint32(triton::callbacks::GET_CONCRETE_REGISTER_VALUE));
-        xPyDict_SetItemString(callbackDict, "SET_CONCRETE_MEMORY_VALUE",   PyLong_FromUint32(triton::callbacks::SET_CONCRETE_MEMORY_VALUE));
-        xPyDict_SetItemString(callbackDict, "SET_CONCRETE_REGISTER_VALUE", PyLong_FromUint32(triton::callbacks::SET_CONCRETE_REGISTER_VALUE));
-        xPyDict_SetItemString(callbackDict, "SYMBOLIC_SIMPLIFICATION",     PyLong_FromUint32(triton::callbacks::SYMBOLIC_SIMPLIFICATION));
+        xPyDict_SetItemString(callbackDict, "GET_CONCRETE_MEMORY_VALUE",     PyLong_FromUint32(triton::callbacks::GET_CONCRETE_MEMORY_VALUE));
+        xPyDict_SetItemString(callbackDict, "GET_CONCRETE_REGISTER_VALUE",   PyLong_FromUint32(triton::callbacks::GET_CONCRETE_REGISTER_VALUE));
+        xPyDict_SetItemString(callbackDict, "SET_CONCRETE_MEMORY_VALUE",     PyLong_FromUint32(triton::callbacks::SET_CONCRETE_MEMORY_VALUE));
+        xPyDict_SetItemString(callbackDict, "SET_CONCRETE_REGISTER_VALUE",   PyLong_FromUint32(triton::callbacks::SET_CONCRETE_REGISTER_VALUE));
+        xPyDict_SetItemString(callbackDict, "SYMBOLIC_NODE_SIMPLIFICATION",  PyLong_FromUint32(triton::callbacks::SYMBOLIC_NODE_SIMPLIFICATION));
+        xPyDict_SetItemString(callbackDict, "SYMBOLIC_TREE_SIMPLIFICATION",  PyLong_FromUint32(triton::callbacks::SYMBOLIC_TREE_SIMPLIFICATION));
+        /* deprecated */
+        xPyDict_SetItemString(callbackDict, "SYMBOLIC_SIMPLIFICATION",       PyLong_FromUint32(triton::callbacks::SYMBOLIC_NODE_SIMPLIFICATION));
       }
 
     }; /* python namespace */

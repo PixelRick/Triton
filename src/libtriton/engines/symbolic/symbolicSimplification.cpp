@@ -5,7 +5,7 @@
 **  This program is under the terms of the BSD License.
 */
 
-#include <list>
+#include <stack>
 #include <triton/exceptions.hpp>
 #include <triton/symbolicSimplification.hpp>
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     ctx.setArchitecture(ARCH.X86_64)
 
     # Record simplifications
-    ctx.addCallback(xor_bitwise, SYMBOLIC_SIMPLIFICATION)
+    ctx.addCallback(xor_bitwise, SYMBOLIC_NODE_SIMPLIFICATION)
 
     a = bv(1, 8)
     b = bv(2, 8)
@@ -173,39 +173,65 @@ namespace triton {
 
 
       triton::ast::SharedAbstractNode SymbolicSimplification::processSimplification(const triton::ast::SharedAbstractNode& node) const {
-        std::list<triton::ast::SharedAbstractNode> worklist;
-        triton::ast::SharedAbstractNode snode = node;
+        struct WorkItem {
+          triton::ast::SharedAbstractNode node;
+          triton::ast::AbstractNode* parent;
+          triton::uint32 childIdx;
+        };
+        std::stack<WorkItem> dfsStack;
+        std::stack<WorkItem> postOrderStack; /* unstacking = postorder traversal */
+        triton::ast::SharedAbstractNode retNode = node;
 
         if (node == nullptr)
           throw triton::exceptions::SymbolicSimplification("SymbolicSimplification::processSimplification(): node cannot be null.");
 
-        if (this->callbacks) {
-          snode = this->callbacks->processCallbacks(triton::callbacks::SYMBOLIC_SIMPLIFICATION, node);
-          /*
-           *  We use a worklist strategy to avoid recursive calls
-           *  and so stack overflow when going through a big AST.
-           */
-          worklist.push_back(snode);
-          while (worklist.size()) {
-            auto ast = worklist.front();
-            worklist.pop_front();
-            bool needs_update = false;
-            for (triton::uint32 index = 0; index < ast->getChildren().size(); index++) {
-              auto child = ast->getChildren()[index];
+        if (this->callbacks && this->callbacks->hasRegisteredCallback(triton::callbacks::SYMBOLIC_TREE_SIMPLIFICATION)) {
+          retNode = this->callbacks->processCallbacks(triton::callbacks::SYMBOLIC_TREE_SIMPLIFICATION, retNode);
+        }
+
+        if (this->callbacks && this->callbacks->hasRegisteredCallback(triton::callbacks::SYMBOLIC_NODE_SIMPLIFICATION)) {
+          /* Build postorder traversal list */
+          dfsStack.push({retNode, nullptr, 0});
+          while (!dfsStack.empty()) {
+            auto item = dfsStack.top();
+            dfsStack.pop();
+            auto& itemNode = item.node;
+            postOrderStack.push(item);
+            auto& children = itemNode->getChildren();
+            for (triton::uint32 idx = 0; idx < children.size(); ++idx) {
+              auto& child = children[idx];
               /* Don't apply simplification on nodes like String, Integer, etc. */
               if (child->getBitvectorSize()) {
-                auto schild = this->callbacks->processCallbacks(triton::callbacks::SYMBOLIC_SIMPLIFICATION, child);
-                ast->setChild(index, schild);
-                needs_update |= !schild->canReplaceNodeWithoutUpdate(child);
-                worklist.push_back(schild);
+                dfsStack.push({child, itemNode.get(), idx});
               }
             }
-            if (needs_update)
-              ast->init();
+          }
+          /* Process simplifications from leaves to root */
+          while (!postOrderStack.empty()) {
+            auto item = postOrderStack.top();
+            postOrderStack.pop();
+            auto itemNode = item.node;
+            auto snode = this->callbacks->processCallbacks(triton::callbacks::SYMBOLIC_NODE_SIMPLIFICATION, itemNode);
+            if (snode->isLogical() != itemNode->isLogical())
+              throw triton::exceptions::SymbolicSimplification("SymbolicSimplification::processSimplification(): node's value type changed.");
+            if (snode->getBitvectorSize() != itemNode->getBitvectorSize())
+              throw triton::exceptions::SymbolicSimplification("SymbolicSimplification::processSimplification(): node's value size changed.");
+            if (snode->evaluate() != itemNode->evaluate())
+              throw triton::exceptions::SymbolicSimplification("SymbolicSimplification::processSimplification(): node's value changed.");
+            if (itemNode != snode) {
+              if (item.parent != nullptr) {
+                item.parent->setChild(item.childIdx, snode);
+                if (!snode->canReplaceNodeWithoutUpdate(itemNode))
+                  item.parent->init();
+              }
+              else {
+                retNode = snode;
+              }
+            }
           }
         }
 
-        return snode;
+        return retNode;
       }
 
 

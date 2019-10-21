@@ -31,7 +31,9 @@ namespace triton {
       GET_CONCRETE_REGISTER_VALUE,  /*!< GET concrete register value callback */
       SET_CONCRETE_MEMORY_VALUE,    /*!< STORE concrete memory value callback */
       SET_CONCRETE_REGISTER_VALUE,  /*!< PUT concrete register value callback */
-      SYMBOLIC_SIMPLIFICATION,      /*!< Symbolic simplification callback */
+      SYMBOLIC_NODE_SIMPLIFICATION, /*!< Symbolic node simplification callback */
+      SYMBOLIC_TREE_SIMPLIFICATION, /*!< Symbolic tree simplification callback */
+      SYMBOLIC_SIMPLIFICATION = SYMBOLIC_NODE_SIMPLIFICATION, /*!< Deprecated, use SYMBOLIC_NODE_SIMPLIFICATION */
     };
 
   /*! @} End of callbacks namespace */

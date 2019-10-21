@@ -66,10 +66,10 @@ namespace triton {
      */
     using setConcreteRegisterValueCallback = ComparableFunctor<void(triton::API&, const triton::arch::Register&, const triton::uint512& value)>;
 
-    /*! \brief The prototype of a SYMBOLIC_SIMPLIFICATION callback.
+    /*! \brief The prototype of a SYMBOLIC_NODE_SIMPLIFICATION or SYMBOLIC_TREE_SIMPLIFICATION callback.
      *
      * \details The callback takes as arguments an API context as first argument and an abstract node as second argument
-     * The callback must return a valid abstract node which will be used as assignment according to the instruction semantics.
+     * The callback must return a valid abstract node which will be used in assignment according to the instruction semantics.
      * See also the page about \ref SMT_simplification_page for more information about semantic transformations.
      */
     using symbolicSimplificationCallback = ComparableFunctor<triton::ast::SharedAbstractNode(triton::API&, const triton::ast::SharedAbstractNode&)>;
@@ -107,7 +107,10 @@ namespace triton {
         std::list<triton::callbacks::setConcreteRegisterValueCallback> setConcreteRegisterValueCallbacks;
 
         //! [c++] Callbacks for all symbolic simplifications.
-        std::list<triton::callbacks::symbolicSimplificationCallback> symbolicSimplificationCallbacks;
+        std::list<triton::callbacks::symbolicSimplificationCallback> symbolicNodeSimplificationCallbacks;
+
+        //! [c++] Callbacks for all symbolic simplifications.
+        std::list<triton::callbacks::symbolicSimplificationCallback> symbolicTreeSimplificationCallbacks;
 
         //! Returns the number of callbacks recorded.
         triton::usize countCallbacks(void) const;
@@ -131,8 +134,11 @@ namespace triton {
         //! Adds a SET_CONCRETE_REGISTER_VALUE callback.
         TRITON_EXPORT void addCallback(triton::callbacks::setConcreteRegisterValueCallback cb);
 
-        //! Adds a SYMBOLIC_SIMPLIFICATION callback.
-        TRITON_EXPORT void addCallback(triton::callbacks::symbolicSimplificationCallback cb);
+        //! Adds a SYMBOLIC_NODE_SIMPLIFICATION callback.
+        TRITON_EXPORT void addSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
+
+        //! Adds a SYMBOLIC_TREE_SIMPLIFICATION callback.
+        TRITON_EXPORT void addSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
 
         //! Removes all recorded callbacks.
         TRITON_EXPORT void removeAllCallbacks(void);
@@ -149,8 +155,11 @@ namespace triton {
         //! Deletes a SET_CONCRETE_REGISTER_VALUE callback.
         TRITON_EXPORT void removeCallback(triton::callbacks::setConcreteRegisterValueCallback cb);
 
-        //! Deletes a SYMBOLIC_SIMPLIFICATION callback.
-        TRITON_EXPORT void removeCallback(triton::callbacks::symbolicSimplificationCallback cb);
+        //! Deletes a SYMBOLIC_NODE_SIMPLIFICATION callback.
+        TRITON_EXPORT void removeSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
+
+        //! Deletes a SYMBOLIC_TREE_SIMPLIFICATION callback.
+        TRITON_EXPORT void removeSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
 
         //! Processes callbacks according to the kind and the C++ polymorphism.
         TRITON_EXPORT triton::ast::SharedAbstractNode processCallbacks(triton::callbacks::callback_e kind, triton::ast::SharedAbstractNode node);
@@ -166,6 +175,9 @@ namespace triton {
 
         //! Processes callbacks according to the kind and the C++ polymorphism.
         TRITON_EXPORT void processCallbacks(triton::callbacks::callback_e kind, const triton::arch::Register& reg, const triton::uint512& value);
+
+        //! Returns true if any callback of the given kind is registered.
+        TRITON_EXPORT bool hasRegisteredCallback(triton::callbacks::callback_e kind) const;
     };
 
   /*! @} End of callbacks namespace */

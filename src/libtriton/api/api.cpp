@@ -583,7 +583,17 @@ namespace triton {
 
 
   void API::addCallback(triton::callbacks::symbolicSimplificationCallback cb) {
-    this->callbacks.addCallback(cb);
+    this->callbacks.addSymbolicNodeSimplificationCallback(cb);
+  }
+
+
+  void API::addSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+    this->callbacks.addSymbolicNodeSimplificationCallback(cb);
+  }
+
+
+  void API::addSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+    this->callbacks.addSymbolicTreeSimplificationCallback(cb);
   }
 
 
@@ -613,7 +623,17 @@ namespace triton {
 
 
   void API::removeCallback(triton::callbacks::symbolicSimplificationCallback cb) {
-    this->callbacks.removeCallback(cb);
+    this->callbacks.removeSymbolicNodeSimplificationCallback(cb);
+  }
+
+
+  void API::removeSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+    this->callbacks.removeSymbolicNodeSimplificationCallback(cb);
+  }
+
+
+  void API::removeSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+    this->callbacks.removeSymbolicTreeSimplificationCallback(cb);
   }
 
 

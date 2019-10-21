@@ -47,8 +47,14 @@ namespace triton {
     }
 
 
-    void Callbacks::addCallback(triton::callbacks::symbolicSimplificationCallback cb) {
-      this->symbolicSimplificationCallbacks.push_back(cb);
+    void Callbacks::addSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+      this->symbolicNodeSimplificationCallbacks.push_back(cb);
+      this->isDefined = true;
+    }
+
+
+    void Callbacks::addSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+      this->symbolicTreeSimplificationCallbacks.push_back(cb);
       this->isDefined = true;
     }
 
@@ -58,7 +64,8 @@ namespace triton {
       this->getConcreteRegisterValueCallbacks.clear();
       this->setConcreteMemoryValueCallbacks.clear();
       this->setConcreteRegisterValueCallbacks.clear();
-      this->symbolicSimplificationCallbacks.clear();
+      this->symbolicNodeSimplificationCallbacks.clear();
+      this->symbolicTreeSimplificationCallbacks.clear();
     }
 
 
@@ -90,8 +97,15 @@ namespace triton {
     }
 
 
-    void Callbacks::removeCallback(triton::callbacks::symbolicSimplificationCallback cb) {
-      this->symbolicSimplificationCallbacks.remove(cb);
+    void Callbacks::removeSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+      this->symbolicNodeSimplificationCallbacks.remove(cb);
+      if (this->countCallbacks() == 0)
+        this->isDefined = false;
+    }
+
+
+    void Callbacks::removeSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb) {
+      this->symbolicTreeSimplificationCallbacks.remove(cb);
       if (this->countCallbacks() == 0)
         this->isDefined = false;
     }
@@ -99,12 +113,21 @@ namespace triton {
 
     triton::ast::SharedAbstractNode Callbacks::processCallbacks(triton::callbacks::callback_e kind, triton::ast::SharedAbstractNode node) {
       switch (kind) {
-        case triton::callbacks::SYMBOLIC_SIMPLIFICATION: {
-          for (auto& function: this->symbolicSimplificationCallbacks) {
+        case triton::callbacks::SYMBOLIC_NODE_SIMPLIFICATION: {
+          for (auto& function: this->symbolicNodeSimplificationCallbacks) {
             // Reinject node in next callback
             node = function(this->api, node);
             if (node == nullptr)
-              throw triton::exceptions::Callbacks("Callbacks::processCallbacks(SYMBOLIC_SIMPLIFICATION): You cannot return a nullptr node.");
+              throw triton::exceptions::Callbacks("Callbacks::processCallbacks(SYMBOLIC_NODE_SIMPLIFICATION): You cannot return a nullptr node.");
+          }
+          break;
+        }
+        case triton::callbacks::SYMBOLIC_TREE_SIMPLIFICATION: {
+          for (auto& function: this->symbolicTreeSimplificationCallbacks) {
+            // Reinject node in next callback
+            node = function(this->api, node);
+            if (node == nullptr)
+              throw triton::exceptions::Callbacks("Callbacks::processCallbacks(SYMBOLIC_TREE_SIMPLIFICATION): You cannot return a nullptr node.");
           }
           break;
         }
@@ -210,6 +233,27 @@ namespace triton {
     }
 
 
+    bool Callbacks::hasRegisteredCallback(triton::callbacks::callback_e kind) const {
+      switch (kind) {
+        case GET_CONCRETE_MEMORY_VALUE:
+          return !getConcreteMemoryValueCallbacks.empty();
+        case GET_CONCRETE_REGISTER_VALUE:
+          return !getConcreteRegisterValueCallbacks.empty();
+        case SET_CONCRETE_MEMORY_VALUE:
+          return !getConcreteMemoryValueCallbacks.empty();
+        case SET_CONCRETE_REGISTER_VALUE:
+          return !setConcreteRegisterValueCallbacks.empty();
+        case SYMBOLIC_NODE_SIMPLIFICATION:
+          return !symbolicNodeSimplificationCallbacks.empty();
+        case SYMBOLIC_TREE_SIMPLIFICATION:
+          return !symbolicTreeSimplificationCallbacks.empty();
+        default:
+          throw triton::exceptions::Callbacks("Callbacks::hasCallbacks(): Unknown kind of callback.");
+      }
+      return false;
+    }
+
+
     triton::usize Callbacks::countCallbacks(void) const {
       triton::usize count = 0;
 
@@ -217,7 +261,8 @@ namespace triton {
       count += this->getConcreteRegisterValueCallbacks.size();
       count += this->setConcreteMemoryValueCallbacks.size();
       count += this->setConcreteRegisterValueCallbacks.size();
-      count += this->symbolicSimplificationCallbacks.size();
+      count += this->symbolicNodeSimplificationCallbacks.size();
+      count += this->symbolicTreeSimplificationCallbacks.size();
 
       return count;
     }

@@ -259,8 +259,14 @@ namespace triton {
         //! [**callbacks api**] - Adds a SET_CONCRETE_REGISTER_VALUE callback (PUT).
         TRITON_EXPORT void addCallback(triton::callbacks::setConcreteRegisterValueCallback cb);
 
-        //! [**callbacks api**] - Adds a SYMBOLIC_SIMPLIFICATION callback.
+        //! [**callbacks api**] - Deprecated; Adds a SYMBOLIC_NODE_SIMPLIFICATION callback.
         TRITON_EXPORT void addCallback(triton::callbacks::symbolicSimplificationCallback cb);
+
+        //! [**callbacks api**] - Adds a SYMBOLIC_NODE_SIMPLIFICATION callback.
+        TRITON_EXPORT void addSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
+
+        //! [**callbacks api**] - Adds a SYMBOLIC_TREE_SIMPLIFICATION callback.
+        TRITON_EXPORT void addSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
 
         //! [**callbacks api**] - Removes all recorded callbacks.
         TRITON_EXPORT void removeAllCallbacks(void);
@@ -277,8 +283,14 @@ namespace triton {
         //! [**callbacks api**] - Deletes a SET_CONCRETE_REGISTER_VALUE callback (PUT).
         TRITON_EXPORT void removeCallback(triton::callbacks::setConcreteRegisterValueCallback cb);
 
-        //! [**callbacks api**] - Deletes a SYMBOLIC_SIMPLIFICATION callback.
+        //! [**callbacks api**] - Deprecated; Deletes a SYMBOLIC_NODE_SIMPLIFICATION callback.
         TRITON_EXPORT void removeCallback(triton::callbacks::symbolicSimplificationCallback cb);
+
+        //! [**callbacks api**] - Deletes a SYMBOLIC_NODE_SIMPLIFICATION callback.
+        TRITON_EXPORT void removeSymbolicNodeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
+
+        //! [**callbacks api**] - Deletes a SYMBOLIC_TREE_SIMPLIFICATION callback.
+        TRITON_EXPORT void removeSymbolicTreeSimplificationCallback(triton::callbacks::symbolicSimplificationCallback cb);
 
         //! [**callbacks api**] - Processes callbacks according to the kind and the C++ polymorphism.
         TRITON_EXPORT triton::ast::SharedAbstractNode processCallbacks(triton::callbacks::callback_e kind, triton::ast::SharedAbstractNode node);

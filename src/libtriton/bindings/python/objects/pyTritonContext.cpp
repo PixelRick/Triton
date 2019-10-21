@@ -578,8 +578,8 @@ namespace triton {
               }, cb));
               break;
 
-            case callbacks::SYMBOLIC_SIMPLIFICATION:
-              PyTritonContext_AsTritonContext(self)->addCallback(callbacks::symbolicSimplificationCallback([cb_self, cb](triton::API& api, triton::ast::SharedAbstractNode node) {
+            case callbacks::SYMBOLIC_NODE_SIMPLIFICATION:
+              PyTritonContext_AsTritonContext(self)->addSymbolicNodeSimplificationCallback(callbacks::symbolicSimplificationCallback([cb_self, cb](triton::API& api, triton::ast::SharedAbstractNode node) {
                 /********* Lambda *********/
                 PyObject* args = nullptr;
 
@@ -608,7 +608,48 @@ namespace triton {
 
                 /* Check if the callback has returned a AbstractNode */
                 if (!PyAstNode_Check(ret))
-                  throw triton::exceptions::Callbacks("Callbacks::processCallbacks(SYMBOLIC_SIMPLIFICATION): You must return a AstNode object.");
+                  throw triton::exceptions::Callbacks("Callbacks::processCallbacks(SYMBOLIC_NODE_SIMPLIFICATION): You must return a AstNode object.");
+
+                /* Update node */
+                node = PyAstNode_AsAstNode(ret);
+                Py_DECREF(args);
+                return node;
+                /********* End of lambda *********/
+              }, cb));
+              break;
+
+            //
+            case callbacks::SYMBOLIC_TREE_SIMPLIFICATION:
+              PyTritonContext_AsTritonContext(self)->addSymbolicTreeSimplificationCallback(callbacks::symbolicSimplificationCallback([cb_self, cb](triton::API& api, triton::ast::SharedAbstractNode node) {
+                /********* Lambda *********/
+                PyObject* args = nullptr;
+
+                /* Create function args */
+                if (cb_self) {
+                  args = triton::bindings::python::xPyTuple_New(3);
+                  PyTuple_SetItem(args, 0, cb_self);
+                  PyTuple_SetItem(args, 1, triton::bindings::python::PyTritonContextRef(api));
+                  PyTuple_SetItem(args, 2, triton::bindings::python::PyAstNode(node));
+                  Py_INCREF(cb_self);
+                }
+                else {
+                  args = triton::bindings::python::xPyTuple_New(2);
+                  PyTuple_SetItem(args, 0, triton::bindings::python::PyTritonContextRef(api));
+                  PyTuple_SetItem(args, 1, triton::bindings::python::PyAstNode(node));
+                }
+
+                /* Call the callback */
+                Py_INCREF(cb);
+                PyObject* ret = PyObject_CallObject(cb, args);
+
+                /* Check the call */
+                if (ret == nullptr) {
+                  throw triton::exceptions::PyCallbacks();
+                }
+
+                /* Check if the callback has returned a AbstractNode */
+                if (!PyAstNode_Check(ret))
+                  throw triton::exceptions::Callbacks("Callbacks::processCallbacks(SYMBOLIC_NODE_SIMPLIFICATION): You must return a AstNode object.");
 
                 /* Update node */
                 node = PyAstNode_AsAstNode(ret);
@@ -2045,8 +2086,11 @@ namespace triton {
             case callbacks::SET_CONCRETE_REGISTER_VALUE:
               PyTritonContext_AsTritonContext(self)->removeCallback(callbacks::setConcreteRegisterValueCallback(nullptr, cb));
               break;
-            case callbacks::SYMBOLIC_SIMPLIFICATION:
-              PyTritonContext_AsTritonContext(self)->removeCallback(callbacks::symbolicSimplificationCallback(nullptr, cb));
+            case callbacks::SYMBOLIC_NODE_SIMPLIFICATION:
+              PyTritonContext_AsTritonContext(self)->removeSymbolicNodeSimplificationCallback(callbacks::symbolicSimplificationCallback(nullptr, cb));
+              break;
+            case callbacks::SYMBOLIC_TREE_SIMPLIFICATION:
+              PyTritonContext_AsTritonContext(self)->removeSymbolicTreeSimplificationCallback(callbacks::symbolicSimplificationCallback(nullptr, cb));
               break;
             default:
               return PyErr_Format(PyExc_TypeError, "removeCallback(): Invalid kind of callback.");
